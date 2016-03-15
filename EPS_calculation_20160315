@@ -1,0 +1,623 @@
+import xlrd
+import os  #os.path.abspath("Desktop/name.xlsx")
+import numpy
+from prettytable import PrettyTable
+
+
+#IM156_check = raw_input("[CHECK POINT]""\n""Did you put IM156(Statutory Tax Rate) on the column you want to compute?""\n""Plese confirm you did! You need to put IM156 BEFORE you export Excel file!!""\n""If you did, process further by pressing Enter. If you don't, please do it first!""\n")
+while True:
+    try:
+        IM156_check = raw_input("[CHECK POINT]""\n""Did you put IM156(Statutory Tax Rate) on the column you want to compute?""\n""Plese confirm you did! You need to put IM156 BEFORE you export Excel file!!""\n""If you did, process further by pressing 'Enter'.""\n""If you don't, 'PRESS 1' to put it manually here. However you should put the number on UWFP manually afterward!""\n")
+        if IM156_check == '':
+            break
+        elif IM156_check == '1':
+            while True:
+                try:
+                    IM156_manual = input("\n""Input IM156 manually(ex.0.242) HERE""\n")
+                    if IM156_manual == None:
+                        print "Wrong type of input, should be a number" + "\n"
+                    else:
+                        break
+                except :
+                    print "Wrong type of input, should be a number" + "\n"
+            break
+        else:
+            print "\n" +"You can only choose between 'Enter' or '1'" + "\n"
+    except :
+        print "Wrong type of input, should be either 'Enter' or '1'" + "\n"
+
+S1_check = raw_input("[CHECK POINT]""\n""If you would like to calculate S2 period, please make sure you include S1 column before exporting Excel file.""\n""If you have only C2 column and doesn't have S1 column, S2 period won't be derived properly.""\n""If you did, process further by pressing Enter. If you don't, please do it first!""\n")
+Q4_IS051_check = raw_input("[CHECK POINT]""\n""Please make sure you delete IS051(Total Cash Preferred Dividends) value on Q4 column before  exporting Excel file.""\n""If you did, process further by pressing Enter. If you don't, please do it first!""\n")  
+
+
+#File name validation, if the file name is wrong, it will ask for it again
+
+while True:
+    try:
+        file_name = raw_input("Please insert file name here: ")
+        file = "/"+file_name+".xls"
+        file_location = os.getcwd()+file
+        workbook = xlrd.open_workbook(file_location)
+        break
+    except IOError:
+        print "\n" + "Oops! Could not locate the file name you specified, please make sure the xls file is in the right folder or has the right name" + "\n"
+
+
+IS_sheet = workbook.sheet_by_index(1)  #IS_sheet
+BS_sheet = workbook.sheet_by_index(3)
+df = numpy.array([[IS_sheet.cell_value(row,col) for row in range (IS_sheet.nrows)] for col in range (IS_sheet.ncols)])
+BS_df = numpy.array([[BS_sheet.cell_value(row,col) for row in range (BS_sheet.nrows)] for col in range (BS_sheet.ncols)])
+
+#Part0-0. Check the Period / accounting type / restatement
+print "\n""\n"
+
+#Fool proofing, if user enters a invalid choice it will ask again
+while True:
+    try:
+        industry_check = input("Industry Selection(insert number only)""\n""   1. Banking & Financial""\n""   2. Industrial""\n")
+        if industry_check == 1:
+            break
+        elif industry_check == 2:
+            break
+        else:
+            print "\n" +"You can only choose between 1 or 2" + "\n"
+    except :
+        print "Wrong type of input, should be a number" + "\n"
+year = input("Please insert 'year'(ex:2012): ""\n")
+while True:
+    try:
+        IACS_check = input("Accounting type?(insert number only)""\n""   1. IFRS(IA:International Accounting)""\n""   2. Local GAAP(CS:Country Specific)""\n")
+        if IACS_check == 1:
+            break
+        elif IACS_check == 2:
+            break
+        else:
+            print "\n" +"You can only choose between 1 or 2" + "\n"
+    except:
+        print "Wrong type of input, should be a number" + "\n"
+
+
+while True:
+    try:
+        RSTM_check = input("Is this Restatement column?(insert number only)""\n""   1. YES""\n""   2. NO""\n")
+        if RSTM_check == 1:
+            break
+        if RSTM_check == 2:
+            break
+        else:
+            print "\n" +"You can only choose between 1 or 2" + "\n"
+    except:
+        print "Wrong type of input, should be a number" + "\n"
+
+while True:
+    try:
+        FCFP_check =  input("What types of financial statement do you want to compute?(insert number only)""\n"
+                        "   1. Both 'Consolidated' and 'Parent'""\n""   2. Only 'Consoliated'""\n""   3. Only 'Parent'""\n")
+        if  FCFP_check ==1:
+            break
+        elif  FCFP_check ==2:
+            break
+        elif  FCFP_check ==3:
+            break
+        else:
+            print "\n" +"You can only choose between 1 or 2 or 3" + "\n"
+    except:
+        print "Wrong type of input, should be a number" + "\n"
+
+#Part0-1. Period modulization
+IACS_ = numpy.array(['IA','CS'])
+RSTM_ = numpy.array(['','R'])
+A1_ = numpy.array(['M','R'])
+Q4S2_ = numpy.array(['Q4','S2'])            
+Q4_   = numpy.array(['C3','M','Q4'])
+Q4RE_ = numpy.array(['C3','R','Q4'])
+S2_   = numpy.array(['S1','D','S2'])
+S2RE_   = numpy.array(['S1','DR','S2'])
+FCFP_ = numpy.array(['FC','FP'])
+
+
+#Part0-2. Set the Period / accounting type / restatement
+if IACS_check == 1 :    IACS_ = IACS_[0]
+else :                  IACS_ = IACS_[1]    
+
+if RSTM_check == 1 :    
+    A1_   = A1_[1] 
+    RSTM_ = RSTM_[1]
+else :                  
+    A1_   = A1_[0] 
+    RSTM_ = RSTM_[0]
+
+if   FCFP_check == 1 :  FCFP_ = FCFP_
+elif FCFP_check == 2 :  FCFP_ = numpy.array([FCFP_[0]])
+elif FCFP_check == 3 :  FCFP_ = numpy.array([FCFP_[1]])
+
+
+#Part1. Start computing
+q=f=period_index = 0
+
+for q in range(len(Q4S2_)):
+    for f in range(len(FCFP_)):
+        FCFP_cal = FCFP_[f]
+        A1_combined = str(year)+"-A1-"+A1_+"("+FCFP_cal+")-"+IACS_
+        C3S1_combined = str(year)+"-"+globals()[(Q4S2_[q]+'_')][0]+"-"+globals()[(Q4S2_[q]+'_')][1]+"("+FCFP_cal+")-"+IACS_
+        Q4S2_combined = str(year)+"-"+globals()[(Q4S2_[q]+'_')][2]+"-D"+RSTM_+"("+FCFP_cal+")-"+IACS_
+        
+        #0. BS081 # of Shares Outstanding                
+        for df_period in (BS_df for BS_df, period in enumerate(BS_df[:,0]) if period == Q4S2_combined):
+            period_index = df_period
+        for df_field in (BS_df for BS_df, field in enumerate(BS_df[1,:]) if field[:5] == 'BS081'):
+            field_index = df_field
+        try:
+            Q4S2_BS081 = float(BS_df[period_index][field_index])
+        except ValueError:
+            print "Something is wrong, did you choose the right financial statement? If it still doesn't work, call Hongcheol now!" + "\n"
+
+            exitpropmt = raw_input("Please enter to exit the program")
+            exit()
+            
+            
+        #0-1. Q4 & Q4RE_ Check When Markup period doesn't exist, the code will call Restatement column
+        if not C3S1_combined in df[:,0] :
+            print '[WARNING] There is no following period column :', C3S1_combined
+            C3S1_combined = str(year)+"-"+globals()[(Q4S2_[q]+'RE_')][0]+"-"+globals()[(Q4S2_[q]+'RE_')][1]+"("+FCFP_cal+")-"+IACS_
+            print 'So it will try with following period instead  :', C3S1_combined            
+        if not C3S1_combined in df[:,0] :
+            print "However, there is no such column(",C3S1_combined,")either.""\n""The program will be finished. Please check the period again."
+            exit()
+            
+
+        #1. IS060(BASIC) / IS062(Diluted)
+        bd=pi=0 
+        period_input = numpy.array([A1_combined,C3S1_combined])
+        IS060062_value = numpy.array([0.0,1.0,2.0,3.0]) # A1_IS060, C3S1_IS060, A1_IS062, C3S1_IS062
+        IS060062_label = numpy.array(['A1_IS060', 'C3S1_IS060', 'A1_IS062', 'C3S1_IS062'])
+        
+        BasicDiluted = numpy.array(['IS060','IS062'])
+        for bd in range(len(BasicDiluted)):
+            for pi in range(len(period_input)): 
+                for df_period in (df for df, period in enumerate(df[:,0]) if period == period_input[pi]):
+                    period_index = df_period
+                for df_field in (df for df, field in enumerate(df[1,:]) if field[:5] == BasicDiluted[bd]):
+                    field_index = df_field
+                if bd == 0 :
+                    try:
+                        IS060062_value[pi+bd] = float(df[period_index][field_index])
+                    except ValueError:
+                        print "You probably messed up the year, please restart the program" + "\n"
+
+                        exitpropmt = raw_input("Please enter to exit the program")
+                        exit()
+                else :
+                    IS060062_value[pi+bd+1] = float(df[period_index][field_index])
+                pi = pi + 1
+            bd = bd + 1
+        
+        A1_IS060   = IS060062_value[0]
+        C3S1_IS060 = IS060062_value[1]
+        A1_IS062   = IS060062_value[2]
+        C3S1_IS062 = IS060062_value[3]
+
+
+       #1. IS060(BASIC) / IS062(Diluted)
+        bd=pi=0 
+        period_input = numpy.array([A1_combined,C3S1_combined])
+        IS060062_value = numpy.array([0.0,1.0,2.0,3.0]) # A1_IS060, C3S1_IS060, A1_IS062, C3S1_IS062
+        IS060062_label = numpy.array(['A1_IS060', 'C3S1_IS060', 'A1_IS062', 'C3S1_IS062'])
+        
+        BasicDiluted = numpy.array(['IS060','IS062'])
+        for bd in range(len(BasicDiluted)):
+            for pi in range(len(period_input)): 
+                for df_period in (df for df, period in enumerate(df[:,0]) if period == period_input[pi]):
+                    period_index = df_period
+                for df_field in (df for df, field in enumerate(df[1,:]) if field[:5] == BasicDiluted[bd]):
+                    field_index = df_field
+                if bd == 0 :
+                    IS060062_value[pi+bd] = float(df[period_index][field_index])
+                else :
+                    IS060062_value[pi+bd+1] = float(df[period_index][field_index])
+                pi = pi + 1
+            bd = bd + 1
+        
+        A1_IS060   = IS060062_value[0]
+        C3S1_IS060 = IS060062_value[1]
+        A1_IS062   = IS060062_value[2]
+        C3S1_IS062 = IS060062_value[3]
+
+ 
+
+        #2. Decide method and calculate Weighted # of shares for EPS (Q4S2_IS060 & Q4S2_IS062)
+        #2-0. Period and Weight Define        
+        if Q4S2_[q] == 'Q4' :
+            Q4S2_Weight = numpy.array([4,3])
+        elif Q4S2_[q] == 'S2':
+            Q4S2_Weight = numpy.array([2,1])
+
+        #2-1. BASIC EPS(Q4S2_IS060)        
+        if A1_IS060 * Q4S2_Weight[0] - C3S1_IS060 * Q4S2_Weight[1] >= Q4S2_BS081 * 1.2 :  # Treshhold : 20% of BS081
+            IS060 = (A1_IS060 + C3S1_IS060) / 2     # Q4=(A1+C3)/2, S2=(A1+S1)/2
+        else :
+            IS060 = A1_IS060 * Q4S2_Weight[0] - C3S1_IS060 * Q4S2_Weight[1]   # Q4=A1*4-C3*3, S2=A1*2-S1*1
+        
+        #2-2. Diluted EPS(Q4S2_IS062)    
+        if A1_IS062 * Q4S2_Weight[0] - C3S1_IS062 * Q4S2_Weight[1] >= Q4S2_BS081 * 1.2 :  # Treshhold : 20% of BS081
+            IS062 = (A1_IS062 + C3S1_IS062) / 2     # Q4=(A1+C3)/2, S2=(A1+S1)/2
+        else :
+            IS062 = A1_IS062 * Q4S2_Weight[0] - C3S1_IS062 * Q4S2_Weight[1]   # Q4=A1*4-C3*3, S2=A1*2-S1*1
+            
+
+        #3. Common field data (From now on, omit Q4S2 notation. i,e,. ex) Q4S2_IS050 --> IS050)
+        #3-1. Get data for 'IS050','IS168','IM197','IM128','IM156'
+        common_field = numpy.array(['IS050','IS051','IS168','IM197','IM128','IM156','IS047'])
+        common_return = numpy.array([0.0, 1.0, 2.0, 3.0, 4.0, 5.0,6.0,7.0])
+
+        i = 0
+        for i in range(len(common_field)):
+            for df_period in (df for df, period in enumerate(df[:,0]) if period == Q4S2_combined):
+                period_index = df_period
+            for df_field in (df for df, field in enumerate(df[1,:]) if field[:5] == common_field[i]):
+                field_index = df_field
+            
+            if df[period_index][field_index] == '' :
+                common_return[i] = 0.0
+            else :
+                common_return[i] = float(df[period_index][field_index])
+            i = i + 1
+                    
+        IS050 = float(common_return[0])     #IS050 Net Income (Losses)
+        IS051 = float(common_return[1])     #IS051 Total Cash Preferred Dividends
+        IS168 = float(common_return[2])     #IS168 Other Adjustments
+        IM197 = float(common_return[3])     #IM197 Discontinued Operations
+        IM128 = float(common_return[4])     #IM128 Extraordinary Items & Accounting Changes 
+        IM156 = float(common_return[5])     #IM156 Statutory Tax Rate
+        IS047 = float(common_return[6])     #XX951 Net Income Available for Common Shareholders
+
+        if IM156 == 0:
+            IM156 = IM156_manual
+
+        #3-2. Calculate EPS 
+        IS047_derived = IS047  # IS047_derived Net Income Available for Common Shareholders shown on
+        IS047_calculated = IS050 - IS051 - IS168   # XX951_cal Net Income Available for Common Shareholders = Net Income - Other Adjustment 
+        IS061 = IS047_calculated / IS060 * 1000    # BASIC EPS(IS061)
+        IS063 = IS047_calculated / IS062 * 1000    # Diluted EPS(IS063)
+        
+        #3-3. Calculate EPS before XO items (BASIC:IS064 / Diluted:IS148)
+        IM306 = 0 + IM197/IS060 # Discontinued Ops(Per Basic Share)
+        IM307 = 0 + IM128/IS060 # XO & Accounting Charges(Per Basic Share)
+        
+        IM162 = 0 + IM197/IS062 # Discontinued Ops(Per Diluted Share)
+        IM091 = 0 + IM128/IS062 # XO & Accounting Charges(Per Diluted Share)
+        
+        IS064 = XX015 = IS061 +  (IM197 + IM128) * 1000 / IS060   # BASIC(IS064) = XX015
+        IS148 = XX019 = IS063 +  (IM197 + IM128) * 1000 / IS062   # Diluted(IS148) = XX019
+        """
+        if IM197==0 and IM128==0:
+            IS064 = IS061   # BASIC
+            IS148 = IS063   # Diluted
+        else:
+            IS064 = IS061 +  (IM197 + IM128) * 1000 / IS060   # BASIC(IS064)
+            IS148 = IS063 +  (IM197 + IM128) * 1000 / IS062   # Diluted(IS148)
+        """
+        
+  
+        #4. Abnormal items(Before-Tax)
+        #4-1. field_define(Before-Tax)
+        financial_field = numpy.array(['XX111','XX110','IM186','IS667','IM069','XX004','XX005','IM188'])
+        industrial_field = numpy.array(['IM185','IM186','IM187','IS667','IM069','IM903','XX004','IM188', 
+                                        'IM189','IM190','IM191','IS666','IM193','IM194','IM195'])
+        abnormal_return = []
+
+        #4-2. Get Before-Tax value for each industry          
+        if industry_check == 1 : #financial and banking
+            abnormal_field = financial_field
+        else :
+            abnormal_field = industrial_field
+
+        i = 0
+        for i in range(len(abnormal_field)):
+            for df_period in (df for df, period in enumerate(df[:,0]) if period == Q4S2_combined):
+                period_index = df_period
+            for df_field in (df for df, field in enumerate(df[1,:]) if field[:5] == abnormal_field[i]):
+                field_index = df_field
+            
+            if df[period_index][field_index] == '' :
+                abnormal_return.append(0.0)
+            else :
+                abnormal_return.append(float(df[period_index][field_index]))
+            i = i + 1
+        abnormal_return = numpy.array(abnormal_return)                
+    
+
+        #5. Abnormal items(ADJUSTED AFTER-TAX)
+        #5-1. field_define(ADJUSTED AFTER-TAX)
+        fin_after_tax = numpy.array(['IM414','IM413','IM309','IM311','IM312','IM313','IM314','IM315'])
+        ind_after_tax = numpy.array(['IM308','IM309','IM310','IM311','IM312','IM313','IM314','IM315', 
+                                        'IM317','IM318','IM319','IM320','IM321','IM322','IM323'])
+        #5-2. Calculate ADJUSTED AFTER-TAX                  
+        abnormal_after_tax = abnormal_return * (1-IM156)
+
+            
+        #6. Calculate IM096, IM373 to get IS097 : Basic EPS before Abnormal Items
+        IM096 = numpy.sum(abnormal_after_tax) # Net abnormal items (IM096)
+        IM373 = IM096 * 1000 / IS060   # Total per share adj(BASIC)       (IM373)
+        IS097 = IS064 + IM373          # Basic EPS before Abnormal Items  (IS097)
+        
+        IM376 = IM096 * 1000 / IS062   # Total per share adj(Diluted)     (IM376)
+        IS147 = IS148 + IM376          # Diluted EPS before Abnormal Items(IS147)
+
+                
+        #7. Print out
+                
+        #7-1. Common values
+        print "\n""+++++++++++++++++++>>\""+Q4S2_combined+"\"<<++++++++++++++++++++++++++++++++++++++++"      
+        print "\n""=================<ADJ Avg. # of Shares for derived column EPS >=============================="      
+        t = PrettyTable(['Field', 'Standard Label','Value'])
+        t.add_row(["{0:<17}".format('IS050'),"{0:<50}".format("Net Income(Loss)                 (For checking)"),("%.6f" % IS050)])
+        t.add_row(["{0:<17}".format('IS051'),"{0:<50}".format("Total Cash Preferred Dividends   (For checking)"),("%.6f" % IS051)])
+        t.add_row(["{0:<17}".format('IS168'),"{0:<50}".format("Other Adjustments                (For checking)"),("%.6f" % IS168)])
+        t.add_row(["{0:<17}".format('IS047_derived'),"{0:<50}".format("Net Income for c. share on core  (For checking)"),("%.6f" % IS047_derived)])
+        t.add_row(["{0:<17}".format('IS047_calculated'),"{0:<50}".format("Net Income for c. share       (For calculating)"),("%.6f" % IS047_calculated)])
+        print t
+        print "\n""IS047_derived is the value which was automatically calculated on UWFP, and we don't use this value for EPS calculation."
+        print "We rather use a newly calulated 'Net Income available for common shareholders' value which I named it as 'IS047_calculated'"
+        print "Here is the formula used to get 'IS047_calculated' : IS047_calculated = IS050 - IS051 - IS168"
+        print "If there is a real IS051 value on Q4/S2, that's fine. But if there is no preferred dividends distributed on either Q4 or S2, IS051 should be zero"
+        print "So, if IS047_derived and IS047_calculated are equal, please make sure you deleted IS051(in case it is not distributed on Q4 or S2)"              
+        
+        print "\n""\n""=================<ADJ EPS for 'BASIC' and 'Diluted' EPS>====================================="      
+        t = PrettyTable(['Field', 'Standard Label','Value'])
+        t.add_row(['IS097',"{0:<50}".format("EPS Before Abnormal Items               (BASIC)"),("%.6f" % IS097)])        
+        t.add_row(['IS064',"{0:<50}".format("EPS from Cont. Op.(=before XO)          (BASIC)"),("%.6f" % IS064)])
+        t.add_row(['IS061',"{0:<50}".format("BASIC EPS                               (BASIC)"),("%.6f" % IS061)])
+        if A1_IS060 * Q4S2_Weight[0] - C3S1_IS060 * Q4S2_Weight[1] >= Q4S2_BS081 * 1.2 : # Treshhold : 20% of BS081
+            if Q4S2_[q] == 'Q4' :
+                t.add_row(['IS060',"{0:<50}".format("Avg. # of Shares [Q4=(A1+C3)/2]         (BASIC)"),("%.6f" % IS060)])
+                t.add_row(['BS081',"{0:<50}".format("# of Shares Outstanding        (For comparison)"),("%.6f" % Q4S2_BS081)])
+            else :
+                t.add_row(['IS060',"{0:<50}".format("Avg. # of Shares [S2=(A1+S1)/2]         (BASIC)"),("%.6f" % IS060)])
+                t.add_row(['BS081',"{0:<50}".format("# of Shares Outstanding        (For comparison)"),("%.6f" % Q4S2_BS081)])
+        else :
+            if Q4S2_[q] == 'Q4' :
+                t.add_row(['IS060',"{0:<50}".format("Avg. # of Shares [Q4=A1*4-C3*3]         (BASIC)"),("%.6f" % IS060)])
+                t.add_row(['BS081',"{0:<50}".format("# of Shares Outstanding        (For comparison)"),("%.6f" % Q4S2_BS081)])
+            else :
+                t.add_row(['IS060',"{0:<50}".format("Avg. # of Shares [S2=A1*2-A1*1]         (BASIC)"),("%.6f" % IS060)])
+                t.add_row(['BS081',"{0:<50}".format("# of Shares Outstanding        (For comparison)"),("%.6f" % Q4S2_BS081)])
+
+        t.add_row(['-----',"{0:<50}".format("--------------------------------------------------"),'-------'])
+        t.add_row(['IS147',"{0:<50}".format("EPS Before Abnormal Items             (Diluted)"),("%.6f" % IS147)])
+        t.add_row(['IS148',"{0:<50}".format("EPS from Cont. Op.(=before XO)        (Diluted)"),("%.6f" % IS148)])
+        t.add_row(['IS063',"{0:<50}".format("Diluted EPS                           (Diluted)"),("%.6f" % IS063)])
+        if A1_IS062 * Q4S2_Weight[0] - C3S1_IS062 * Q4S2_Weight[1] >= Q4S2_BS081 * 1.2 : # Treshhold : 20% of BS081
+            if Q4S2_[q] == 'Q4' :
+                t.add_row(['IS062',"{0:<50}".format("Avg. # of Shares [Q4=(A1+C3)/2]       (Diluted)"),("%.6f" % IS062)])
+                t.add_row(['BS081',"{0:<50}".format("# of Shares Outstanding        (For comparison)"),("%.6f" % Q4S2_BS081)])
+            else :
+                t.add_row(['IS062',"{0:<50}".format("Avg. # of Shares [S2=(A1+S1)/2]       (Diluted)"),("%.6f" % IS062)])
+                t.add_row(['BS081',"{0:<50}".format("# of Shares Outstanding        (For comparison)"),("%.6f" % Q4S2_BS081)])
+        else :
+            if Q4S2_[q] == 'Q4' :
+                t.add_row(['IS062',"{0:<50}".format("Avg. # of Shares [Q4=A1*4-C3*3]       (Diluted)"),("%.6f" % IS062)])
+                t.add_row(['BS081',"{0:<50}".format("# of Shares Outstanding        (For comparison)"),("%.6f" % Q4S2_BS081)])
+            else :
+                t.add_row(['IS062',"{0:<50}".format("Avg. # of Shares [S2=A1*2-A1*1]       (Diluted)"),("%.6f" % IS062)])
+                t.add_row(['BS081',"{0:<50}".format("# of Shares Outstanding        (For comparison)"),("%.6f" % Q4S2_BS081)])
+        print t
+
+        #7-2. ADJ Per Share Level for Abnormal items
+        #7-2-0. industry label for print
+        fin_after_tax = numpy.array(['IM414','IM413','IM309','IM311','IM312','IM313','IM314','IM315'])
+        fin_basic     = numpy.array(['IM394','IM393','IM330','IM332','IM333','IM334','IM335','IM336'])
+        fin_diluted   = numpy.array(['IM396','IM395','IM346','IM348','IM349','IM350','IM351','IM352'])
+
+        ind_after_tax = numpy.array(['IM308','IM309','IM310','IM311','IM312','IM313','IM314','IM315', 
+                                        'IM317','IM318','IM319','IM320','IM321','IM322','IM323'])
+        ind_basic     = numpy.array(['IM329','IM330','IM331','IM332','IM333','IM334','IM335','IM336', 
+                                        'IM338','IM339','IM340','IM341','IM342','IM343','IM344'])
+        ind_diluted   = numpy.array(['IM345','IM346','IM347','IM348','IM349','IM350','IM351','IM352', 
+                                        'IM354','IM355','IM356','IM357','IM358','IM359','IM360'])
+
+        #7-2-0. Define industry
+        if industry_check == 1 : #financial and banking
+            abn_after_tax = fin_after_tax
+            abn_basic     = fin_basic
+            abn_diluted   = fin_diluted
+        else : # industrial
+            abn_after_tax = ind_after_tax
+            abn_basic     = ind_basic
+            abn_diluted   = ind_diluted
+
+        if industry_check == 1 : #financial and banking
+            #7-2-1. Adjusted After-Tax
+            print "\n""\n""===========<Adjusted After-Tax of Abnormal items>============================="
+            t = PrettyTable(['Field', 'Standard Label','Value'])
+            # t.add_row(['IM373',"{0:<50}".format("Total Per Basic Share Adjustments"),("%.6f" % IM373)])        
+            i = 0            
+            for i in range(len(abn_after_tax)):
+                for df_field in (df for df, field in enumerate(df[1,:]) if field[:5] == abn_after_tax[i]):
+                    if abnormal_after_tax[i] == 0.0:
+                        t.add_row([df[1][df_field][:5],"{0:<50}".format(df[1][df_field][6:]),"-"])
+                    else :
+                        t.add_row([df[1][df_field][:5],"{0:<50}".format(df[1][df_field][6:]),"%.6f" % (abnormal_after_tax[i])])
+                i = i + 1
+            print t
+    
+            #7-2-2. EPS(basic)
+            print "\n""\n""=====================<ADJ PER SHARE LEVEL for Abnormal items(BASIC)>=============================="
+            t = PrettyTable(['Field', 'Standard Label','Value'])
+            t.add_row(['IM373',"{0:<50}".format("Total Per Basic Share Adjustments"),("%.6f" % IM373)])        
+            i = 0            
+            for i in range(len(abn_basic)):
+                for df_field in (df for df, field in enumerate(df[1,:]) if field[:5] == abn_basic[i]):
+                    if abnormal_after_tax[i] == 0.0:
+                        t.add_row([df[1][df_field][:5],"{0:<70}".format(df[1][df_field][6:]),"-"])
+                    else :
+                        t.add_row([df[1][df_field][:5],"{0:<70}".format(df[1][df_field][6:]),"%.6f" % (abnormal_after_tax[i]*1000/IS060)])
+                i = i + 1
+            print t
+    
+            #7-2-3. EPS(diluted)
+            print "\n""================<ADJ PER SHARE LEVEL for Abnormal items(Diluted)>======================="      
+            t = PrettyTable(['Field', 'Standard Label','Value'])
+            t.add_row(['IM376',"{0:<50}".format("Total Per Diluted Share Adjustments"),("%.6f" % IM376)])        
+            i = 0            
+            for i in range(len(abn_diluted)):
+                for df_field in (df for df, field in enumerate(df[1,:]) if field[:5] == abn_diluted[i]):
+                    if abnormal_after_tax[i] == 0.0:
+                        t.add_row([df[1][df_field][:5],"{0:<50}".format(df[1][df_field][6:]),"-"])
+                    else :                
+                        t.add_row([df[1][df_field][:5],"{0:<50}".format(df[1][df_field][6:]),"%.6f" % (abnormal_after_tax[i]*1000/IS062)])
+                i = i + 1
+            print t
+            
+        else : # industrial printing
+            #7-2-1. EPS(basic)
+            print "\n""=================<ADJ EPS for 'BASIC' EPS in adjustment IS section>================================="      
+            t = PrettyTable(['Field', 'Standard Label','Value'])
+            if A1_IS060 * Q4S2_Weight[0] - C3S1_IS060 * Q4S2_Weight[1] >= Q4S2_BS081 * 1.2 : # Treshhold : 20% of BS081
+                if Q4S2_[q] == 'Q4' :
+                    t.add_row(['XX013',"{0:<50}".format("Avg. # of Shares [Q4=(A1+C3)/2]         (BASIC)"),("%.6f" % IS060)])
+                else :
+                    t.add_row(['XX013',"{0:<50}".format("Avg. # of Shares [S2=(A1+S1)/2]         (BASIC)"),("%.6f" % IS060)])
+            else :
+                if Q4S2_[q] == 'Q4' :
+                    t.add_row(['XX013',"{0:<50}".format("Avg. # of Shares [Q4=A1*4-C3*3]         (BASIC)"),("%.6f" % IS060)])
+                else :
+                    t.add_row(['XX013',"{0:<50}".format("Avg. # of Shares [S2=A1*2-A1*1]         (BASIC)"),("%.6f" % IS060)])
+            t.add_row(['XX016',"{0:<50}".format("BASIC EPS"),("%.6f" % IS061)])
+            t.add_row(['IM306',"{0:<50}".format("Discontinued Ops(Per Basic Sh)"),("%.6f" % IM306)])                    
+            t.add_row(['IM307',"{0:<50}".format("XO & Accounting Charges (Per Basic Sh)"),("%.6f" % IM307)])
+            t.add_row(['XX015',"{0:<50}".format("Basic EPS Before XO Items"),("%.6f" % IS064)])
+            print t            
+
+
+            #7-2-2. ADJ PER SHARE LEVEL for Abnormal items(BASIC)
+            print "\n""\n""===========<ADJ PER SHARE LEVEL for Abnormal items(BASIC)>===================="
+            t = PrettyTable(['Field', 'Standard Label','Value'])
+            # t.add_row(['IM373',"{0:<50}".format("Total Per Basic Share Adjustments"),("%.6f" % IM373)])        
+            i = 0            
+            for i in range(len(abn_basic)):
+                for df_field in (df for df, field in enumerate(df[1,:]) if field[:5] == abn_basic[i]):
+                    if abnormal_after_tax[i] == 0.0:
+                        t.add_row([df[1][df_field][:5],"{0:<70}".format(df[1][df_field][6:]),"-"])
+                    else :
+                        t.add_row([df[1][df_field][:5],"{0:<70}".format(df[1][df_field][6:]),"%.6f" % (abnormal_after_tax[i]*1000/IS060)])
+                i = i + 1
+            print t
+            
+            #7-2-3. EPS(Diluted)            
+            print "\n""===========================<ADJ EPS for 'Diluted' EPS>==============================================="      
+            t = PrettyTable(['Field', 'Standard Label','Value'])
+            if A1_IS062 * Q4S2_Weight[0] - C3S1_IS062 * Q4S2_Weight[1] >= Q4S2_BS081 * 1.2 : # Treshhold : 20% of BS081
+                if Q4S2_[q] == 'Q4' :
+                    t.add_row(['XX017',"{0:<50}".format("Avg. # of Shares [Q4=(A1+C3)/2]       (Diluted)"),("%.6f" % IS062)])
+                else :
+                    t.add_row(['XX017',"{0:<50}".format("Avg. # of Shares [S2=(A1+S1)/2]       (Diluted)"),("%.6f" % IS062)])
+            else :
+                if Q4S2_[q] == 'Q4' :
+                    t.add_row(['XX017',"{0:<50}".format("Avg. # of Shares [Q4=A1*4-C3*3]       (Diluted)"),("%.6f" % IS062)])
+                else :
+                    t.add_row(['XX017',"{0:<50}".format("Avg. # of Shares [S2=A1*2-A1*1]       (Diluted)"),("%.6f" % IS062)])
+            t.add_row(['XX020',"{0:<50}".format("Diluted EPS"),("%.6f" % IS063)])
+            t.add_row(['IM162',"{0:<50}".format("Discontinued Ops(Per Diluted Sh)"),("%.6f" % IM162)])                    
+            t.add_row(['IM091',"{0:<50}".format("XO & Accounting Charges (Per Diluted Sh)"),("%.6f" % IM091)])
+            t.add_row(['XX019',"{0:<50}".format("Diluted EPS Before XO Items"),("%.6f" % IS148)])
+            print t
+
+            #7-2-4. ADJ PER SHARE LEVEL for Abnormal items(Diluted)
+            print "\n""================<ADJ PER SHARE LEVEL for Abnormal items(Diluted)>======================="      
+            t = PrettyTable(['Field', 'Standard Label','Value'])
+            # t.add_row(['IM376',"{0:<50}".format("Total Per Diluted Share Adjustments"),("%.6f" % IM376)])        
+            i = 0            
+            for i in range(len(abn_diluted)):
+                for df_field in (df for df, field in enumerate(df[1,:]) if field[:5] == abn_diluted[i]):
+                    if abnormal_after_tax[i] == 0.0:
+                        t.add_row([df[1][df_field][:5],"{0:<50}".format(df[1][df_field][6:]),"-"])
+                    else :                
+                        t.add_row([df[1][df_field][:5],"{0:<50}".format(df[1][df_field][6:]),"%.6f" % (abnormal_after_tax[i]*1000/IS062)])
+                i = i + 1
+            print t
+
+            #7-2-5. TOTAL PER SHARE ADJUSTMENT for Abnormal items
+            print "\n""===========<TOTAL PER SHARE ADJUSTMENT for Abnormal items>=================="      
+            t = PrettyTable(['Field', 'Standard Label','Value'])
+            t.add_row(['IM373',"{0:<50}".format("Total Per Basic Share Adjustments"),("%.6f" % IM373)])        
+            t.add_row(['IM376',"{0:<50}".format("Total Per Diluted Share Adjustments"),("%.6f" % IM376)])        
+            print t
+
+                
+            #7-2-6. Adjusted After-Tax
+            print "\n""\n""===========<Adjusted After-Tax of Abnormal items>============================="
+            t = PrettyTable(['Field', 'Standard Label','Value'])
+            # t.add_row(['IM373',"{0:<50}".format("Total Per Basic Share Adjustments"),("%.6f" % IM373)])        
+            i = 0            
+            for i in range(len(abn_after_tax)):
+                for df_field in (df for df, field in enumerate(df[1,:]) if field[:5] == abn_after_tax[i]):
+                    if abnormal_after_tax[i] == 0.0:
+                        t.add_row([df[1][df_field][:5],"{0:<50}".format(df[1][df_field][6:]),"-"])
+                    else :
+                        t.add_row([df[1][df_field][:5],"{0:<50}".format(df[1][df_field][6:]),"%.6f" % (abnormal_after_tax[i])])
+                i = i + 1
+            print t
+    
+                    
+        # Additional : Amor_intan_value
+        ai=pi=0 
+        period_input = numpy.array([A1_combined, C3S1_combined])
+        Amor_A1_value = numpy.array([0.0,1.0,2.0,3.0]) # 'A1_IM379','A1_IM381','A1_IM380','A1_IM382'
+        Amor_C3S1_value = numpy.array([0.0,1.0,2.0,3.0]) # 'A1_IM379','A1_IM381','A1_IM380','A1_IM382'
+        # Amor_A1_label = numpy.array(['A1_IM379','A1_IM381','A1_IM380','A1_IM382'])
+        
+        Amor_intan = numpy.array(['IM379','IM381','IM380','IM382'])
+        for ai in range(len(Amor_intan)):
+            for pi in range(len(period_input)): 
+                for df_period in (df for df, period in enumerate(df[:,0]) if period == period_input[pi]):
+                    period_index = df_period
+                for df_field in (df for df, field in enumerate(df[1,:]) if field[:5] == Amor_intan[ai]):
+                    field_index = df_field
+                if pi == 0 :
+                    try:
+                        Amor_A1_value[ai] = float(df[period_index][field_index])
+                    except ValueError:
+                        Amor_A1_value[ai] = 0
+                else :
+                    try:
+                        Amor_C3S1_value[ai] = float(df[period_index][field_index])
+                    except ValueError:
+                        Amor_C3S1_value[ai] = 0
+                pi = pi + 1
+            ai = ai + 1
+        IM379 = Amor_A1_value[0] - Amor_C3S1_value[0]
+        IM381 = Amor_A1_value[1] - Amor_C3S1_value[1]
+        IM380 = Amor_A1_value[2] - Amor_C3S1_value[2]
+        IM382 = Amor_A1_value[3] - Amor_C3S1_value[3]        
+
+     
+        
+        #7-2-4. Amortization of Intangibles Print
+        print "\n""===========<Amortization of Intangibles>======================================="      
+        t = PrettyTable(['Field', 'Standard Label','Value'])
+        if IM379 == 0.0 :
+            t.add_row(['IM379',"{0:<50}".format("Amortization of Intangibles - Pre Tax"),"-"])
+        else :
+            t.add_row(['IM379',"{0:<50}".format("Amortization of Intangibles - Pre Tax"),("%.6f" % IM379)])        
+        if IM381 == 0.0 :
+            t.add_row(['IM381',"{0:<50}".format("Amortization of Intangibles - After Tax"),"-"])        
+        else :
+            t.add_row(['IM381',"{0:<50}".format("Amortization of Intangibles - After Tax"),("%.6f" % IM381)])        
+        if IM380 == 0.0 :
+            t.add_row(['IM380',"{0:<50}".format("Amortization of Intangibles - Basic Per Share"),"-"])        
+        else :
+            t.add_row(['IM380',"{0:<50}".format("Amortization of Intangibles - Basic Per Share"),("%.6f" % IM380)])        
+        if IM382 == 0.0 :
+            t.add_row(['IM382',"{0:<50}".format("Amortization of Intangibles - Diluted Per Share"),"-"])        
+        else :
+            t.add_row(['IM382',"{0:<50}".format("Amortization of Intangibles - Diluted Per Share"),("%.6f" % IM382)])        
+        
+        print t,"\n"
+        print '******* Used Columns to derive:',A1_combined,', ', C3S1_combined, ' *******'
+        print 'The Tax Rate(IM156) used for this calculation is', IM156
+
+        print "\n""++++++++++++++++>> End of \""+Q4S2_combined+" \" Statement<<+++++++++++++++++++++""\n"
+
+        move_to_next = raw_input("Would you like to move? If you are ready, Press Enter""\n")
+        if move_to_next == '': print ""
