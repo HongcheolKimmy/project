@@ -1,0 +1,112 @@
+# -*- coding: utf-8 -*-
+"""
+Created on Thu Apr 21 17:39:20 2016
+
+@author: hkim581
+"""
+import sys
+reload(sys)
+sys.setdefaultencoding('utf-8') #sys.getdefaultencoding()
+
+import numpy as np
+#from pandas import *
+import pandas as pd
+import os
+import csv
+import time 
+pd.set_option('display.expand_frame_repr', False)
+import xlwt
+from xlwt.Workbook import *
+from pandas import ExcelWriter
+import xlsxwriter
+
+# Set file path
+#os.chdir('C:\Users\hkim581\AppData\Local\Bloomberg\data')
+userpath = os.getcwd()
+username = userpath.split("\\")[2]
+input_folderpath = 'C:\\Users\\'+username+'\\Desktop\\Python\\PDF_To_XLS_Converter\\'
+#file_name = '20160510A4.xls'
+file_name = '20160414A4.xls'
+filepath = input_folderpath + file_name
+
+xl = pd.ExcelFile(filepath)
+        
+#xl.sheet_names[0]
+df = xl.parse(xl.sheet_names[0]) #Issuer mapping
+#df.columns
+#df[df[u'채권'].astype(str) == '576,887,412']
+
+str(df.loc[186][0]) # 국채 상장잔액
+str(df.loc[187][0]) # 국채 거래량
+
+str(df.loc[191][0]) # 지방채 상장잔액
+str(df.loc[202][0]) # 지방채 거래량
+
+str(df.loc[192][0]) # 통안채 상장잔액
+str(df.loc[203][0]) # 통안채 거래량
+
+str(df.loc[193][0]) # 금융채 상장잔액
+str(df.loc[204][0]) # 금융채 거래량
+
+str(df.loc[194][0]) # 비금융채 상장잔액
+str(df.loc[205][0]) # 비금융채 거래량
+
+str(df.loc[195][0]) # 지방공사채 상장잔액
+str(df.loc[206][0]) # 지방공사채 거래량
+
+str(df.loc[196][0]) # 특수채 상장잔액 소계
+str(df.loc[207][0]) # 특수채 거래량 소계
+
+str(df.loc[197][0]) # 일반사채 상장잔액
+str(df.loc[208][0]) # 일반사채 거래량
+
+str(df.loc[198][0]) # 금융회사채 상장잔액
+str(df.loc[209][0]) # 금융회사채 거래량
+
+str(df.loc[199][0]) # 지방공사채 상장잔액
+str(df.loc[210][0]) # 지방공사채 거래량
+
+str(df.loc[200][0]) # 회사채 상장잔액 소계
+str(df.loc[211][0]) # 회사채 거래량 소계
+
+str(df.loc[201][0]) # 외국채권 상장잔액
+str(df.loc[212][0]) # 외국채권 거래량
+
+str(df.loc[246][0]) # 합계 상장잔액
+str(df.loc[247][0]) # 합계 거래량
+
+str(df.loc[251][0]) # ABS 상장잔액
+str(df.loc[255][0]) # ABS 거래량
+
+
+
+
+
+
+
+
+
+
+
+
+"""
+output_folderpath = 'C:\\Users\\'+username+'\\Desktop\\FUND\\output\\'
+#output_file = "Nice_bbg_lt_check_list.xlsx"
+output_file = "Nice_1st_sorting.xlsx"
+writer = pd.ExcelWriter(output_folderpath+output_file)
+df_nice_bbg_no_exist.to_excel(writer,'nice_absent_id_1155')
+df_nice_bbg_no_not_exist.to_excel(writer,'absent_id_16_not_belong_to_NICE')
+writer.save()
+"""
+
+
+
+
+
+
+
+
+
+
+
+
